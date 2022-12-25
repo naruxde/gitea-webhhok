@@ -1,3 +1,3 @@
 # gitea-pyhook
 
-Gitea web hook receiver, written in python with FastAPI framework.
+Gitea webhook receiver, written in python with FastAPI framework.

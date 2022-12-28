@@ -33,6 +33,7 @@ class JobBase:
     """
 
     def __init__(self):
+        """Base class for all jobs."""
         self._id = str(uuid4())
         self._status = JobStates.READY
         self._th_worker = Thread()
@@ -156,11 +157,21 @@ class JobProcess(JobBase):
         return self._cwd
 
 
-class JobLongRun(JobBase):
-    """Just for developing a task, which runs 60 seconds."""
+class JobWaitAndPrint(JobBase):
+    """Demo to build your own jobs by inheriting the JobBase class"""
+
+    def __init__(self, runtime=60):
+        """
+        Run this job to print a log line every second.
+
+        :param runtime: Seconds to run this job
+        """
+        self.runtime = runtime
+        super().__init__()
 
     def job(self) -> None:
-        for i in range(60):
+        """This is called from base class and handles exceptions."""
+        for i in range(1, self.runtime + 1):
             self.log_print(f"Loop {i} times\n")
             sleep(1.0)
 
@@ -168,21 +179,13 @@ class JobLongRun(JobBase):
 if __name__ == '__main__':
     from selectors import DefaultSelector, EVENT_READ
 
-
-    class DemoJob(JobBase):
-        """Define new job class."""
-
-        def job(self) -> None:
-            self.log_print("Testjob")
-
-
     lst_jobs = [
-        DemoJob(),
         JobProcess([
             "ls",
             "pwd",
             "find ./ -name '*.py'",
-        ])
+        ]),
+        JobWaitAndPrint(10),
     ]
 
     sel = DefaultSelector()

@@ -13,7 +13,7 @@ from starlette.websockets import WebSocket
 from websockets.exceptions import ConnectionClosedError, ConnectionClosedOK
 
 from .. import JobBase, jobs
-from ..internal.jobs import JobLongRun, JobStates
+from ..internal.jobs import JobStates, JobWaitAndPrint
 from ..models.jobs import JobInformation
 
 log = getLogger()
@@ -49,9 +49,9 @@ async def read_job(job_id: str):
 
 
 @router.post("/", response_model=JobInformation)
-async def test_job():
+async def test_job(seconds: int = 60):
     """Testjob with autostart."""
-    job = JobLongRun()
+    job = JobWaitAndPrint(seconds)
     jobs[job.id] = job
     job.start()
     return job_to_model(job)

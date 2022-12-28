@@ -11,6 +11,7 @@ from subprocess import Popen, TimeoutExpired
 from tempfile import NamedTemporaryFile
 from threading import Thread
 from time import sleep
+from typing import TextIO, Union
 from uuid import uuid4
 
 log = getLogger()
@@ -38,15 +39,10 @@ class JobBase:
         self._th_worker = Thread()
 
         # Kind of IPC with a buffer of one line
-        self.joblog = NamedTemporaryFile("w", prefix="pyhook_", buffering=1)
-        """Logbook of this job."""
-
-        self.output = open(self.joblog.name, "r")
-        """Logfile output of running job."""
+        self._job_log = NamedTemporaryFile("w", prefix="pyhook_", buffering=1)
 
     def __del__(self):
-        self.joblog.close()
-        self.output.close()
+        self._job_log.close()
 
     def _worker_target(self) -> None:
         """Save execute the overriden job function and redirect output."""
@@ -55,12 +51,19 @@ class JobBase:
         except Exception as e:
             self._status = JobStates.FAILED
             log.exception(e)
-            self.joblog.write(str(e))
+            self._job_log.write(str(e))
             return
-        finally:
-            self.joblog.close()
 
+        self._job_log.flush()
         self._status = JobStates.SUCCESS
+
+    def write_log(self, text: str) -> None:
+        """Write to job log."""
+        self._job_log.write(text)
+
+    def open_logfile(self) -> TextIO:
+        """Get a file object to read the job log."""
+        return open(self._job_log.name)
 
     def start(self) -> None:
         """Start worker thread for this job."""
@@ -77,9 +80,9 @@ class JobBase:
         """Override function with your own job."""
         raise NotImplementedError
 
-    def wait(self) -> None:
+    def wait(self, timeout: Union[float, None] = None) -> None:
         """Wait for job execution finished."""
-        self._th_worker.join()
+        self._th_worker.join(timeout)
 
     @property
     def id(self):
@@ -106,8 +109,8 @@ class JobProcess(JobBase):
             lst_proc,
             cwd=dirname(lst_proc[0]) or "./",
             bufsize=0,
-            stdout=self.joblog,
-            stderr=self.joblog,
+            stdout=self._job_log,
+            stderr=self._job_log,
         )
         while True:
             exit_code = process.poll()
@@ -129,28 +132,29 @@ class JobLongRun(JobBase):
 
     def job(self) -> None:
         for i in range(60):
-            self.joblog.write(f"Loop {i} times\n")
+            self.write_log(f"Loop {i} times\n")
             sleep(1.0)
 
 
 if __name__ == '__main__':
     from selectors import DefaultSelector, EVENT_READ
 
-    sel = DefaultSelector()
-
 
     class DemoJob(JobBase):
         """Define new job class."""
 
         def job(self) -> None:
-            self.joblog.write("Testjob")
+            self.write_log("Testjob")
 
 
     job = DemoJob()
-    sel.register(job.output, EVENT_READ, print)
-    job.start()
 
+    sel = DefaultSelector()
+    sel.register(job.open_logfile(), EVENT_READ, print)
+
+    job.start()
     print(f"Started {job.id}")
+
     while True:
         # Wait for read event of job output
         events = sel.select(1.0)

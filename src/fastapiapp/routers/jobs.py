@@ -63,9 +63,10 @@ async def job_websocket(ws: WebSocket, job_id: str):
         raise ex
 
     job = jobs[job_id]
+    log_file = job.open_logfile()
 
     while True:
-        data = job.output.read()
+        data = log_file.read()
         if not data:
             if job.status is not JobStates.RUNNING:
                 break

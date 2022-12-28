@@ -4,7 +4,7 @@ __author__ = "Sven Sager"
 __copyright__ = "Copyright (C) 2022 Sven Sager"
 __license__ = "GPLv3"
 
-from pydantic import BaseModel, HttpUrl
+from pydantic import BaseModel
 
 from fastapiapp.internal.jobs import JobStates
 

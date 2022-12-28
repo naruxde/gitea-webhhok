@@ -6,12 +6,11 @@ __license__ = "GPLv3"
 
 from enum import Enum
 from logging import getLogger
-from os.path import dirname
 from subprocess import Popen, TimeoutExpired
 from tempfile import NamedTemporaryFile
 from threading import Thread
 from time import sleep
-from typing import TextIO, Union
+from typing import List, TextIO, Union
 from uuid import uuid4
 
 log = getLogger()
@@ -102,33 +101,59 @@ class JobBase:
 class JobProcess(JobBase):
     """Run a process as job."""
 
-    def __init__(self, cmd: str):
-        self.cmd = cmd
+    def __init__(self, cmd: Union[str, List[str]], cwd="./", stop_on_fail=True):
+        """
+        Create a job based on external programs.
+
+        If you pass a command list, the commands will be executed one by one.
+
+        :param cmd: Single command or command list to execute
+        :param cwd: Change working directory for all commands
+        :param stop_on_fail: Stop working, if a command return an error
+        """
+        if type(cmd) == str:
+            cmd = [cmd]
+        self._cmd = cmd  # type: List[str]
+        self._cwd = cwd
+        self._stop_on_fail = stop_on_fail
         super().__init__()
 
     def job(self) -> None:
         """This will execute the given command."""
-        lst_proc = self.cmd.split()
-        process = Popen(
-            lst_proc,
-            cwd=dirname(lst_proc[0]) or "./",
-            bufsize=0,
-            stdout=self._job_log,
-            stderr=self._job_log,
-        )
-        while True:
-            exit_code = process.poll()
-            if type(exit_code) == int:
-                break
-            try:
-                process.wait(1.0)
-            except TimeoutExpired:
-                continue
+        for cmd in self._cmd:
+            process = Popen(
+                cmd,
+                cwd=self._cwd,
+                bufsize=0,
+                stdout=self._job_log,
+                stderr=self._job_log,
+                shell=True,
+            )
+            while True:
+                exit_code = process.poll()
+                if type(exit_code) == int:
+                    break
+                try:
+                    process.wait(1.0)
+                except TimeoutExpired:
+                    continue
 
-        if exit_code:
-            log.error(f"Error {exit_code} on process '{self.cmd}'")
-        else:
-            log.info(f"Successful executed process '{self.cmd}'")
+            if exit_code == 0:
+                log.info(f"Successful executed process '{cmd}'")
+            else:
+                log.error(f"Error {exit_code} on process '{cmd}'")
+                if self._stop_on_fail:
+                    break
+
+    @property
+    def cmd(self) -> List[str]:
+        """Get the command list."""
+        return self._cmd.copy()
+
+    @property
+    def cwd(self) -> str:
+        """Get working directory for all commands."""
+        return self._cwd
 
 
 class JobLongRun(JobBase):
@@ -151,20 +176,32 @@ if __name__ == '__main__':
             self.log_print("Testjob")
 
 
-    job = DemoJob()
+    lst_jobs = [
+        DemoJob(),
+        JobProcess([
+            "ls",
+            "pwd",
+            "find ./ -name '*.py'",
+        ])
+    ]
 
     sel = DefaultSelector()
-    sel.register(job.open_logfile(), EVENT_READ, print)
+    for job in lst_jobs:
+        logfile = job.open_logfile()
+        sel.register(logfile, EVENT_READ)
 
-    job.start()
-    print(f"Started {job.id}")
+        job.start()
+        print(f"Started {job.id}")
 
-    while True:
-        # Wait for read event of job output
-        events = sel.select(1.0)
-        if not events and job.status is not JobStates.RUNNING:
-            # Job finished and not more log data to read
-            break
+        while True:
+            # Wait for read event of job output
+            events = sel.select(1.0)
+            if not events and job.status is not JobStates.RUNNING:
+                # Job finished and not more log data to read
+                break
 
-        for key, mask in events:
-            key.data("Joboutput:", key.fileobj.read())
+            for key, mask in events:
+                print("Joboutput:", logfile.read(), end="")
+
+        sel.unregister(logfile)
+        logfile.close()

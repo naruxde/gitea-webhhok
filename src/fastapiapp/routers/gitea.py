@@ -7,7 +7,8 @@ __license__ = "GPLv3"
 from fastapi import APIRouter, Depends
 
 from ..dependencies import WebhookHeaders
-from ..models import ModelGiteaWebhookPush, ModelGiteaWebhookTag
+from ..models.gitea import GiteaWebhookPush, GiteaWebhookTag
+from ..models.jobs import JobInformation
 
 router = APIRouter(
     prefix="/gitea",
@@ -16,29 +17,25 @@ router = APIRouter(
 )
 
 
-@router.post("/push")
-async def gitea_post(hook: ModelGiteaWebhookPush, gt_headers: WebhookHeaders = Depends(WebhookHeaders)):
+@router.post("/push", response_model=JobInformation)
+async def gitea_post(hook: GiteaWebhookPush, gt_headers: WebhookHeaders = Depends(WebhookHeaders)):
     """Entry point for gitea webhook."""
-    return {
-        "jobid": "0",
-        "href": "/jobs/0",
-        "status": "not jet implemented",
-        "headers": {
-            "event": gt_headers.event,
-            "delivery": gt_headers.delivery,
-        }
-    }
+    data = JobInformation(
+        job_id=0,
+        href="/jobs/0",
+        status="not jet implemented",
+        webhook="/jobs/0/ws",
+    )
+    return data
 
 
-@router.post("/tag")
-async def gitea_post(hook: ModelGiteaWebhookTag, gt_headers: WebhookHeaders = Depends(WebhookHeaders)):
+@router.post("/tag", response_model=JobInformation)
+async def gitea_post(hook: GiteaWebhookTag, gt_headers: WebhookHeaders = Depends(WebhookHeaders)):
     """Entry point for gitea webhook."""
-    return {
-        "jobid": "0",
-        "href": "/jobs/0",
-        "status": "not jet implemented",
-        "headers": {
-            "event": gt_headers.event,
-            "delivery": gt_headers.delivery,
-        }
-    }
+    data = JobInformation(
+        job_id=0,
+        href="/jobs/0",
+        status="not jet implemented",
+        webhook="/jobs/0/ws",
+    )
+    return data

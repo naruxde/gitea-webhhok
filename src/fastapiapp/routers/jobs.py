@@ -5,53 +5,64 @@ __copyright__ = "Copyright (C) 2022 Sven Sager"
 __license__ = "GPLv3"
 
 import asyncio
+from typing import List
 
-from fastapi import APIRouter
+from fastapi import APIRouter, HTTPException
 from starlette.websockets import WebSocket
 
 from .. import JobBase, jobs
 from ..internal.jobs import JobLongRun, JobStates
+from ..models.jobs import JobInformation
 
 router = APIRouter(
     prefix="/jobs",
     tags=["jobs"],
-    responses={404: {"description": "Not found"}},
+    responses={404: {"description": "Job not found"}},
 )
 
 
-def job_to_json(job: JobBase) -> dict:
-    return {
-        "job_id": job.id,
-        "status": job.status,
-        "href": f"/jobs/{job.id}",
-        "websocket": f"/jobs/{job.id}/ws",
-    }
+def job_to_model(job: JobBase) -> JobInformation:
+    data = JobInformation(
+        job_id=job.id,
+        status=job.status.value,
+        href=f"/jobs/{job.id}",
+        webhook=f"/jobs/{job.id}/ws",
+    )
+    return data
 
 
-@router.get("/")
+@router.get("/", response_model=List[JobInformation])
 async def read_jobs():
-    lst_jobs = [job_to_json(job) for job in jobs.values()]
+    lst_jobs = [job_to_model(job) for job in jobs.values()]
     return lst_jobs
 
 
-@router.get("/{job_id}")
+@router.get("/{job_id}", response_model=JobInformation)
 async def read_job(job_id: str):
-    return job_to_json(jobs[job_id])
+    if job_id not in jobs:
+        raise HTTPException(404, "Job not found")
+    return job_to_model(jobs[job_id])
 
 
-@router.post("/")
+@router.post("/", response_model=JobInformation)
 async def test_job():
     """Testjob with autostart."""
     job = JobLongRun()
     jobs[job.id] = job
     job.start()
-    return job_to_json(job)
+    return job_to_model(job)
 
 
 @router.websocket("/{job_id}/ws")
 async def job_websocket(ws: WebSocket, job_id: str):
-    job = jobs[job_id]
     await ws.accept()
+    if job_id not in jobs:
+        ex = HTTPException(404, "Job not found")
+        await ws.send_text(f"{ex.status_code}: {ex.detail}")
+        await ws.close()
+        raise ex
+
+    job = jobs[job_id]
 
     while True:
         data = job.output.read()

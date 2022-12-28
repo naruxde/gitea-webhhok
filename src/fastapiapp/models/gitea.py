@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-"""Data models of this API."""
+"""Data models of gitea resource."""
 __author__ = "Sven Sager"
 __copyright__ = "Copyright (C) 2022 Sven Sager"
 __license__ = "GPLv3"
@@ -9,19 +9,15 @@ from typing import Any, List, Union
 
 from pydantic import BaseModel, HttpUrl
 
-
-class ModelUserInfo(BaseModel):
-    name: str
-    email: str
-    username: str
+from .common import SimpleUserInfo
 
 
-class ModelCommit(BaseModel):
+class GiteaCommit(BaseModel):
     id: str
     message: str
     url: HttpUrl
-    author: ModelUserInfo
-    committer: ModelUserInfo
+    author: SimpleUserInfo
+    committer: SimpleUserInfo
     verification: Any
     timestamp: datetime
     added: List[str]
@@ -29,7 +25,7 @@ class ModelCommit(BaseModel):
     modified: List[str]
 
 
-class ModelGiteaUser(BaseModel):
+class GiteaUser(BaseModel):
     id: int
     login: str
     full_name: str
@@ -52,19 +48,19 @@ class ModelGiteaUser(BaseModel):
     username: str
 
 
-class ModelRepository(BaseModel):
-    class ModelInternalTracker(BaseModel):
+class GiteaRepository(BaseModel):
+    class GiteaInternalTracker(BaseModel):
         enable_time_tracker: bool
         allow_only_contributors_to_track_time: bool
         enable_issue_dependencies: bool
 
-    class ModelPermissions(BaseModel):
+    class GiteaPermissions(BaseModel):
         admin: bool
         push: bool
         pull: bool
 
     id: int
-    owner: ModelGiteaUser
+    owner: GiteaUser
     name: str
     full_name: str
     description: str
@@ -92,9 +88,9 @@ class ModelRepository(BaseModel):
     archived: bool
     created_at: datetime
     updated_at: datetime
-    permissions: ModelPermissions
+    permissions: GiteaPermissions
     has_issues: bool
-    internal_tracker: ModelInternalTracker
+    internal_tracker: GiteaInternalTracker
     has_wiki: bool
     has_pull_requests: bool
     has_projects: bool
@@ -111,25 +107,25 @@ class ModelRepository(BaseModel):
     # repo_transfer: # todo: Find out data
 
 
-class ModelGiteaWebhookPush(BaseModel):
+class GiteaWebhookPush(BaseModel):
     """Describes the push webhook object."""
     ref: str
     before: str
     after: str
     compare_url: HttpUrl
-    commits: List[ModelCommit]
+    commits: List[GiteaCommit]
     total_commits: int
-    head_commit: ModelCommit
-    repository: ModelRepository
-    pusher: ModelGiteaUser
-    sender: ModelGiteaUser
+    head_commit: GiteaCommit
+    repository: GiteaRepository
+    pusher: GiteaUser
+    sender: GiteaUser
 
 
-class ModelGiteaWebhookTag(BaseModel):
+class GiteaWebhookTag(BaseModel):
     """Describes the tag webhook object."""
     sha: str = ""
     ref: str
     ref_type: str
     pusher_type: str = ""
-    repository: ModelRepository
-    sender: ModelGiteaUser
+    repository: GiteaRepository
+    sender: GiteaUser

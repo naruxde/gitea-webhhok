@@ -5,14 +5,18 @@ __copyright__ = "Copyright (C) 2022 Sven Sager"
 __license__ = "GPLv3"
 
 import asyncio
+from logging import getLogger
 from typing import List
 
 from fastapi import APIRouter, HTTPException
 from starlette.websockets import WebSocket
+from websockets.exceptions import ConnectionClosedError, ConnectionClosedOK
 
 from .. import JobBase, jobs
 from ..internal.jobs import JobLongRun, JobStates
 from ..models.jobs import JobInformation
+
+log = getLogger()
 
 router = APIRouter(
     prefix="/jobs",
@@ -72,6 +76,14 @@ async def job_websocket(ws: WebSocket, job_id: str):
                 break
             await asyncio.sleep(0.1)
             continue
-        await ws.send_text(data)
+        try:
+            await ws.send_text(data)
+        except ConnectionClosedOK:
+            log.info(f"Websocket close by client")
+            break
+        except ConnectionClosedError as e:
+            log.error(f"Websocket closed with errors: '{e}'")
+            break
 
+    log_file.close()
     await ws.close()

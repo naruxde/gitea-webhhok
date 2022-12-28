@@ -57,8 +57,12 @@ class JobBase:
         self._job_log.flush()
         self._status = JobStates.SUCCESS
 
-    def write_log(self, text: str) -> None:
-        """Write to job log."""
+    def log_print(self, *objects, sep=" ", end="\n") -> None:
+        """Write via print like implementation into job log."""
+        print(*objects, sep=sep, end=end, file=self._job_log, flush=True)
+
+    def log_write(self, text: str) -> None:
+        """Write directly into job log."""
         self._job_log.write(text)
 
     def open_logfile(self) -> TextIO:
@@ -132,7 +136,7 @@ class JobLongRun(JobBase):
 
     def job(self) -> None:
         for i in range(60):
-            self.write_log(f"Loop {i} times\n")
+            self.log_print(f"Loop {i} times\n")
             sleep(1.0)
 
 
@@ -144,7 +148,7 @@ if __name__ == '__main__':
         """Define new job class."""
 
         def job(self) -> None:
-            self.write_log("Testjob")
+            self.log_print("Testjob")
 
 
     job = DemoJob()

@@ -24,7 +24,7 @@ async def gitea_post(hook: GiteaWebhookPush, gt_headers: WebhookHeaders = Depend
         job_id=0,
         href="/jobs/0",
         status="not jet implemented",
-        webhook="/jobs/0/ws",
+        href_ws="/jobs/0/ws",
     )
     return data
 
@@ -36,6 +36,6 @@ async def gitea_post(hook: GiteaWebhookTag, gt_headers: WebhookHeaders = Depends
         job_id=0,
         href="/jobs/0",
         status="not jet implemented",
-        webhook="/jobs/0/ws",
+        href_ws="/jobs/0/ws",
     )
     return data

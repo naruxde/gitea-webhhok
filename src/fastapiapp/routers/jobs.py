@@ -26,7 +26,7 @@ def job_to_model(job: JobBase) -> JobInformation:
         job_id=job.id,
         status=job.status.value,
         href=f"/jobs/{job.id}",
-        webhook=f"/jobs/{job.id}/ws",
+        href_ws=f"/jobs/{job.id}/ws",
     )
     return data
 

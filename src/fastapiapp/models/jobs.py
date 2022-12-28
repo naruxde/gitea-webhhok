@@ -15,4 +15,4 @@ class JobInformation(BaseModel):
     job_id: str
     href: str
     status: JobStates
-    webhook: str
+    href_ws: str

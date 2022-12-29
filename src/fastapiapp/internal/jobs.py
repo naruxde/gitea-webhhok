@@ -69,6 +69,35 @@ class JobBase:
         """Get a file object to read the job log."""
         return open(self._job_log.name)
 
+    def shell_exec(self, cmd: str, cwd: str = None, env: dict = None) -> int:
+        """
+        Execute the given command as subprocess.
+
+        :param cmd: Command line to execute
+        :param cwd: Change working directory
+        :param env: Dictionary with additional environment variables
+        :return: exit code of command
+        """
+        process = Popen(
+            cmd,
+            bufsize=0,
+            stdout=self._job_log,
+            stderr=self._job_log,
+            close_fds=False,
+            shell=True,
+            cwd=cwd,
+            env=env,
+        )
+        while True:
+            exit_code = process.poll()
+            if exit_code is None:
+                try:
+                    process.wait(1.0)
+                except TimeoutExpired:
+                    pass
+            else:
+                return exit_code
+
     def start(self) -> None:
         """Start worker thread for this job."""
         if self._status is JobStates.RUNNING:
@@ -94,6 +123,11 @@ class JobBase:
         return self._id
 
     @property
+    def running(self) -> bool:
+        """Get running status of job."""
+        return self._th_worker.is_alive()
+
+    @property
     def status(self) -> JobStates:
         """Get status of job."""
         return self._status
@@ -102,7 +136,7 @@ class JobBase:
 class JobProcess(JobBase):
     """Run a process as job."""
 
-    def __init__(self, cmd: Union[str, List[str]], cwd="./", stop_on_fail=True):
+    def __init__(self, cmd: Union[str, List[str]], cwd: str = None, env: dict = None, stop_on_fail=True):
         """
         Create a job based on external programs.
 
@@ -110,35 +144,21 @@ class JobProcess(JobBase):
 
         :param cmd: Single command or command list to execute
         :param cwd: Change working directory for all commands
+        :param env: Dictionary with additional environment variables
         :param stop_on_fail: Stop working, if a command return an error
         """
         if type(cmd) == str:
             cmd = [cmd]
-        self._cmd = cmd  # type: List[str]
+        self._cmd = cmd.copy()  # type: List[str]
         self._cwd = cwd
+        self._env = env.copy()
         self._stop_on_fail = stop_on_fail
         super().__init__()
 
     def job(self) -> None:
         """This will execute the given command."""
         for cmd in self._cmd:
-            process = Popen(
-                cmd,
-                cwd=self._cwd,
-                bufsize=0,
-                stdout=self._job_log,
-                stderr=self._job_log,
-                shell=True,
-            )
-            while True:
-                exit_code = process.poll()
-                if type(exit_code) == int:
-                    break
-                try:
-                    process.wait(1.0)
-                except TimeoutExpired:
-                    continue
-
+            exit_code = self.shell_exec(cmd, self._cwd, self._env)
             if exit_code == 0:
                 log.info(f"Successful executed process '{cmd}'")
             else:

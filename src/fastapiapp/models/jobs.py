@@ -16,3 +16,4 @@ class JobInformation(BaseModel):
     href: str
     status: JobStates
     href_ws: str
+    msg: str = ""

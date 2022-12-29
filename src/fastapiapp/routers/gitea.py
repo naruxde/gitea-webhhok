@@ -7,7 +7,7 @@ __license__ = "GPLv3"
 from fastapi import APIRouter, Depends
 
 from ..dependencies import WebhookHeaders
-from ..models.gitea import GiteaWebhookPush, GiteaWebhookTag
+from ..models.gitea import GiteaWebhookPush, GiteaWebhookRef
 from ..models.jobs import JobInformation
 
 router = APIRouter(
@@ -18,24 +18,30 @@ router = APIRouter(
 
 
 @router.post("/push", response_model=JobInformation)
-async def gitea_post(hook: GiteaWebhookPush, gt_headers: WebhookHeaders = Depends(WebhookHeaders)):
-    """Entry point for gitea webhook."""
+async def gitea_push(push: GiteaWebhookPush, gt_headers: WebhookHeaders = Depends(WebhookHeaders)):
+    """
+    Entry point for gitea push.
+
+    Something was deleted, if "after" is "0000000000000000000000000000000000000000".
+    """
     data = JobInformation(
         job_id=0,
         href="/jobs/0",
-        status="not jet implemented",
+        status="failed",
         href_ws="/jobs/0/ws",
+        msg="not implemented jet"
     )
     return data
 
 
-@router.post("/tag", response_model=JobInformation)
-async def gitea_post(hook: GiteaWebhookTag, gt_headers: WebhookHeaders = Depends(WebhookHeaders)):
+@router.post("/ref", response_model=JobInformation)
+async def gitea_ref(hook: GiteaWebhookRef, gt_headers: WebhookHeaders = Depends(WebhookHeaders)):
     """Entry point for gitea webhook."""
     data = JobInformation(
         job_id=0,
         href="/jobs/0",
-        status="not jet implemented",
+        status="failed",
         href_ws="/jobs/0/ws",
+        msg="not implemented jet"
     )
     return data

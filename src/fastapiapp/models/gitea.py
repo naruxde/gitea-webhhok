@@ -108,24 +108,38 @@ class GiteaRepository(BaseModel):
 
 
 class GiteaWebhookPush(BaseModel):
-    """Describes the push webhook object."""
+    """
+    Describes the push object.
+
+    This will be used for pushed commits, incl. new branches, tags and so on.
+    """
     ref: str
     before: str
     after: str
     compare_url: HttpUrl
     commits: List[GiteaCommit]
     total_commits: int
-    head_commit: GiteaCommit
+    head_commit: Union[GiteaCommit, None]
     repository: GiteaRepository
     pusher: GiteaUser
     sender: GiteaUser
 
+    def __str__(self):
+        return f"{self.ref}_{self.repository.name}"
 
-class GiteaWebhookTag(BaseModel):
-    """Describes the tag webhook object."""
+
+class GiteaWebhookRef(BaseModel):
+    """
+    Describes a ref object.
+
+    This will be used for create or delete tags and branches.
+    """
     sha: str = ""
     ref: str
     ref_type: str
     pusher_type: str = ""
     repository: GiteaRepository
     sender: GiteaUser
+
+    def __str__(self):
+        return f"{self.ref_type}_{self.repository.name}"

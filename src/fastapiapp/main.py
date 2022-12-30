@@ -10,6 +10,7 @@ from . import __version__
 from . import routers
 
 app = FastAPI(
+    title="Build manager for gitea webhooks.",
     version=__version__,
 )
 

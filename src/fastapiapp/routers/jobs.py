@@ -12,7 +12,8 @@ from fastapi import APIRouter, HTTPException
 from starlette.websockets import WebSocket
 from websockets.exceptions import ConnectionClosedError, ConnectionClosedOK
 
-from .. import JobBase, jobs
+from ..internal.jobs import JobBase
+from ..internal.jobmgr import jobs
 from ..internal.jobs import JobStates, JobWaitAndPrint
 from ..models.jobs import JobInformation
 

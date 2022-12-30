@@ -3,3 +3,7 @@
 __author__ = "Sven Sager"
 __copyright__ = "Copyright (C) 2022 Sven Sager"
 __license__ = "GPLv3"
+
+from . import gitjobs
+from . import jobmgr
+from . import jobs

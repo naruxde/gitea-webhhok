@@ -69,14 +69,15 @@ class JobBase:
         """Get a file object to read the job log."""
         return open(self._job_log.name)
 
-    def shell_exec(self, cmd: str, cwd: str = None, env: dict = None) -> int:
+    def shell_exec(self, cmd: str, cwd: str = None, env: dict = None, timeout: float = None) -> int:
         """
         Execute the given command as subprocess.
 
         :param cmd: Command line to execute
         :param cwd: Change working directory
         :param env: Dictionary with additional environment variables
-        :return: exit code of command
+        :param timeout: Timeout in seconds of process
+        :return: exit code of command or -1 on timed out
         """
         process = Popen(
             cmd,
@@ -88,15 +89,10 @@ class JobBase:
             cwd=cwd,
             env=env,
         )
-        while True:
-            exit_code = process.poll()
-            if exit_code is None:
-                try:
-                    process.wait(1.0)
-                except TimeoutExpired:
-                    pass
-            else:
-                return exit_code
+        try:
+            return process.wait(timeout)
+        except TimeoutExpired:
+            return -1
 
     def start(self) -> None:
         """Start worker thread for this job."""

@@ -4,16 +4,19 @@ __author__ = "Sven Sager"
 __copyright__ = "Copyright (C) 2022 Sven Sager"
 __license__ = "GPLv3"
 
+from collections import namedtuple
 from enum import Enum
 from logging import getLogger
 from subprocess import Popen, TimeoutExpired
 from tempfile import NamedTemporaryFile
 from threading import Thread
 from time import sleep
-from typing import List, TextIO, Union
+from typing import List, TextIO, Tuple, Union
 from uuid import uuid4
 
 log = getLogger()
+
+ShellOutput = namedtuple("ShellOutput", ["cmd", "exit_code", "output"])
 
 
 class JobStates(Enum):
@@ -38,8 +41,10 @@ class JobBase:
         self._status = JobStates.READY
         self._th_worker = Thread()
 
+        self._last_shell_output = ""
+
         # Kind of IPC with a buffer of one line
-        self._job_log = NamedTemporaryFile("w", prefix="pyhook_", buffering=1)
+        self._job_log = NamedTemporaryFile("w+", prefix="pyhook_", buffering=1)
 
     def __del__(self):
         self._job_log.close()
@@ -79,6 +84,8 @@ class JobBase:
         :param timeout: Timeout in seconds of process
         :return: exit code of command or -1 on timed out
         """
+        file_position = self._job_log.tell()
+
         process = Popen(
             cmd,
             bufsize=0,
@@ -90,9 +97,15 @@ class JobBase:
             env=env,
         )
         try:
-            return process.wait(timeout)
+            exit_code = process.wait(timeout)
         except TimeoutExpired:
             return -1
+
+        # Read job log just for the actual process execution
+        self._job_log.seek(file_position)
+        self._last_shell_output = self._job_log.read()
+
+        return exit_code
 
     def start(self) -> None:
         """Start worker thread for this job."""
@@ -119,6 +132,11 @@ class JobBase:
         return self._id
 
     @property
+    def last_shell_output(self) -> str:
+        """Get the output from the last running shell_exec call."""
+        return self._last_shell_output
+
+    @property
     def running(self) -> bool:
         """Get running status of job."""
         return self._th_worker.is_alive()
@@ -143,24 +161,37 @@ class JobProcess(JobBase):
         :param env: Dictionary with additional environment variables
         :param stop_on_fail: Stop working, if a command return an error
         """
+        super().__init__()
         if type(cmd) == str:
             cmd = [cmd]
         self._cmd = cmd.copy()  # type: List[str]
         self._cwd = cwd
-        self._env = env.copy()
+        self._env = env.copy() if env else {}
         self._stop_on_fail = stop_on_fail
-        super().__init__()
+
+        self._all_shell_outputs = []  # type: List[Tuple[str, int, str]]
 
     def job(self) -> None:
         """This will execute the given command."""
         for cmd in self._cmd:
             exit_code = self.shell_exec(cmd, self._cwd, self._env)
+            self._all_shell_outputs.append(ShellOutput(cmd, exit_code, self.last_shell_output))
             if exit_code == 0:
                 log.info(f"Successful executed process '{cmd}'")
             else:
                 log.error(f"Error {exit_code} on process '{cmd}'")
                 if self._stop_on_fail:
                     break
+
+    @property
+    def all_shell_outputs(self) -> List[Tuple[str, int, str]]:
+        """
+        Get a list of all shell executed processes.
+
+        The output is a list with namedtuple, which contains the command, the
+        exitcode and the output.
+        """
+        return self._all_shell_outputs.copy()
 
     @property
     def cmd(self) -> List[str]:
@@ -198,8 +229,8 @@ if __name__ == '__main__':
     lst_jobs = [
         JobProcess([
             "ls",
-            "pwd",
             "find ./ -name '*.py'",
+            "pwd",
         ]),
         JobWaitAndPrint(10),
     ]
@@ -220,7 +251,10 @@ if __name__ == '__main__':
                 break
 
             for key, mask in events:
-                print("Joboutput:", logfile.read(), end="")
+                print("Job output:", logfile.read(), end="")
+
+        if isinstance(job, JobProcess):
+            print("Shell output", job.all_shell_outputs)
 
         sel.unregister(logfile)
         logfile.close()

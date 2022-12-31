@@ -1,6 +1,6 @@
 ### Create long running testjob
 // @no-log
-POST http://127.0.0.1:8000/jobs/?seconds=5
+POST http://{{server}}:8000/jobs/?seconds=5
 Content-Type: application/json
 Accept: application/json
 
@@ -10,7 +10,7 @@ Accept: application/json
 
 ### Connect to websocket of created job
 
-WEBSOCKET ws://127.0.0.1:8000{{href_ws}}
+WEBSOCKET ws://{{server}}:8000{{href_ws}}/
 
 > {%
     var i = 0

@@ -11,13 +11,14 @@ import aiosqlite
 from aiosqlite import Connection, Cursor
 
 from ..models.envs import BuildEnvironment, BuildOptions, EnvironmentVariables
+from ..settings import api_settings
 
 sql_db = None  # type: Connection
 
 
 async def connect():
     global sql_db
-    sql_db = await aiosqlite.connect("db/gitea-pyhook.db")
+    sql_db = await aiosqlite.connect(api_settings.sqlite_file)
     sql_db.row_factory = Row
 
 

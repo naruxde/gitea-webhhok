@@ -9,7 +9,7 @@ from threading import Thread
 
 import uvicorn
 
-from gitea_pyhook import api
+from . import api
 
 log = getLogger()
 

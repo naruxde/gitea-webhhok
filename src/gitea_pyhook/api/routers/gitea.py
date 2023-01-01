@@ -64,7 +64,8 @@ async def gitea_ref(build_environment: str,
         lst_build_tasks.append(BuildTask(
             task.branch,
             task.command,
-            task.distro
+            task.distro,
+            task.git_push,
         ))
 
     build_job = GitBuildPackage(
@@ -72,6 +73,7 @@ async def gitea_ref(build_environment: str,
         f"refs/tags/{ref.ref}",
         lst_build_tasks,
         dc_environment,
+        job_id=gt_headers.delivery,
     )
     jobs[build_job.id] = build_job
 

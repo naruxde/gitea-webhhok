@@ -27,6 +27,7 @@ class GitBuildPackage(JobBase):
                  build_tasks: List[BuildTask],
                  environment_variables: Dict[str, str] = None,
                  version_regex: str = None,
+                 job_id: str = None,
                  ):
         """
         Create a build job for a version tag.
@@ -40,8 +41,9 @@ class GitBuildPackage(JobBase):
         :param build_tasks: Build the version vor each given task
         :param environment_variables: Append these variables into build environment
         :param version_regex: Regex to find version number in tag name
+        :param job_id: Set own id for job
         """
-        super().__init__()
+        super().__init__(job_id)
 
         self.ssh_url = ssh_url
         self.merge_tag = merge_version_tag

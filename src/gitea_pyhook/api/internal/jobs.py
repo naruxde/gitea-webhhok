@@ -35,9 +35,9 @@ class JobBase:
     buffer to get stdout and stderr of the job execution.
     """
 
-    def __init__(self):
+    def __init__(self, job_id: str = None):
         """Base class for all jobs."""
-        self._id = str(uuid4())
+        self._id = job_id or str(uuid4())
         self._status = JobStates.READY
         self._th_worker = Thread()
 
@@ -150,7 +150,9 @@ class JobBase:
 class JobProcess(JobBase):
     """Run a process as job."""
 
-    def __init__(self, cmd: Union[str, List[str]], cwd: str = None, env: dict = None, stop_on_fail=True):
+    def __init__(self, cmd: Union[str, List[str]],
+                 cwd: str = None, env: dict = None, stop_on_fail=True,
+                 job_id: str = None):
         """
         Create a job based on external programs.
 
@@ -160,8 +162,9 @@ class JobProcess(JobBase):
         :param cwd: Change working directory for all commands
         :param env: Dictionary with additional environment variables
         :param stop_on_fail: Stop working, if a command return an error
+        :param job_id: Set own id for job
         """
-        super().__init__()
+        super().__init__(job_id)
         if type(cmd) == str:
             cmd = [cmd]
         self._cmd = cmd.copy()  # type: List[str]
@@ -207,14 +210,15 @@ class JobProcess(JobBase):
 class JobWaitAndPrint(JobBase):
     """Demo to build your own jobs by inheriting the JobBase class"""
 
-    def __init__(self, runtime=60):
+    def __init__(self, runtime=60, job_id: str = None):
         """
         Run this job to print a log line every second.
 
         :param runtime: Seconds to run this job
+        :param job_id: Set own id for job
         """
         self.runtime = runtime
-        super().__init__()
+        super().__init__(job_id)
 
     def job(self) -> None:
         """This is called from base class and handles exceptions."""

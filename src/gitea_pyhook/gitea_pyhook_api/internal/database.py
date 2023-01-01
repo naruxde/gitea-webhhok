@@ -10,7 +10,7 @@ from typing import Union
 import aiosqlite
 from aiosqlite import Connection, Cursor
 
-from fastapiapp.models.envs import BuildEnvironment, BuildOptions, EnvironmentVariables
+from ..models.envs import BuildEnvironment, BuildOptions, EnvironmentVariables
 
 sql_db = None  # type: Connection
 

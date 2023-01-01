@@ -6,7 +6,7 @@ __license__ = "GPLv3"
 
 from pydantic import BaseModel
 
-from fastapiapp.internal.jobs import JobStates
+from ..internal.jobs import JobStates
 
 
 class JobInformation(BaseModel):

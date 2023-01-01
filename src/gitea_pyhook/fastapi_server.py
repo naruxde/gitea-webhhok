@@ -9,7 +9,7 @@ from threading import Thread
 
 import uvicorn
 
-import fastapiapp
+import gitea_pyhook_api
 
 log = getLogger()
 
@@ -26,7 +26,7 @@ class FastApiServer(Thread):
     def __init__(self, host="127.0.0.1", port=8000):
         super().__init__()
         self._config = uvicorn.Config(
-            fastapiapp.app,
+            gitea_pyhook_api.app,
             host=host,
             port=port,
         )

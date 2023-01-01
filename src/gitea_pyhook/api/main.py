@@ -1,14 +1,14 @@
 # -*- coding: utf-8 -*-
 """FastAPI server of gitea pyhook."""
 __author__ = "Sven Sager"
-__copyright__ = "Copyright (C) 2022 Sven Sager"
+__copyright__ = "Copyright (C) 2023 Sven Sager"
 __license__ = "GPLv3"
 
 from fastapi import FastAPI
 
-from . import __version__
 from . import routers
 from .internal import database
+from .. import __version__
 
 app = FastAPI(
     title="Build manager for gitea webhooks.",

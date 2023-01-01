@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 """Jobs of gitea pyhook."""
 __author__ = "Sven Sager"
-__copyright__ = "Copyright (C) 2022 Sven Sager"
+__copyright__ = "Copyright (C) 2023 Sven Sager"
 __license__ = "GPLv3"
 
 from collections import namedtuple

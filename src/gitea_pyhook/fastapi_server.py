@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 """Uvicorn manager to run our fastapi application."""
 __author__ = "Sven Sager"
-__copyright__ = "Copyright (C) 2022 Sven Sager"
+__copyright__ = "Copyright (C) 2023 Sven Sager"
 __license__ = "GPLv3"
 
 from logging import getLogger
@@ -9,7 +9,7 @@ from threading import Thread
 
 import uvicorn
 
-import gitea_pyhook_api
+from gitea_pyhook import api
 
 log = getLogger()
 
@@ -26,7 +26,7 @@ class FastApiServer(Thread):
     def __init__(self, host="127.0.0.1", port=8000):
         super().__init__()
         self._config = uvicorn.Config(
-            gitea_pyhook_api.app,
+            api.app,
             host=host,
             port=port,
         )

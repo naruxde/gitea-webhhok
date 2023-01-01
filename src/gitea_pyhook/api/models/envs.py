@@ -14,6 +14,7 @@ class BuildOptions(BaseModel):
     branch: str
     command: str
     distro: str
+    git_push: bool
 
 
 class EnvironmentVariables(BaseModel):

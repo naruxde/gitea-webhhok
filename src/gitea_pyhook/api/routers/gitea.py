@@ -25,7 +25,8 @@ router = APIRouter(
 
 
 @router.post("/push/{build_environment}", response_model=JobInformation, status_code=HTTP_201_CREATED)
-async def gitea_push(build_environment: str, push: GiteaWebhookPush,
+async def gitea_push(build_environment: str,
+                     push: GiteaWebhookPush,
                      gt_headers: WebhookHeaders = Depends(WebhookHeaders)):
     """
     Entry point for gitea push.
@@ -44,10 +45,10 @@ async def gitea_push(build_environment: str, push: GiteaWebhookPush,
 
 @router.post("/ref/{build_environment}", response_model=JobInformation, status_code=HTTP_201_CREATED)
 async def gitea_ref(build_environment: str,
-                    hook: GiteaWebhookRef,
+                    ref: GiteaWebhookRef,
                     gt_headers: WebhookHeaders = Depends(WebhookHeaders)):
     """Entry point for gitea tag creation."""
-    if not hook.ref_type == "tag":
+    if not ref.ref_type == "tag":
         raise HTTPException(400, "The ref type must be tag")
 
     build_environment = await get_build_env(build_environment)
@@ -67,8 +68,8 @@ async def gitea_ref(build_environment: str,
         ))
 
     build_job = GitBuildPackage(
-        hook.repository.ssh_url,
-        f"refs/tags/{hook.ref}",
+        ref.repository.ssh_url,
+        f"refs/tags/{ref.ref}",
         lst_build_tasks,
         dc_environment,
     )

@@ -45,6 +45,7 @@ async def get_build_env(build_envs_name: str) -> Union[BuildEnvironment, None]:
             branch=row["branch"],
             command=row["command"],
             distro=row["distro"],
+            git_push=row["git_push"],
         ) for row in await cur_options.fetchall()],
     )
 

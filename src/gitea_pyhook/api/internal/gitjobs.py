@@ -109,14 +109,14 @@ class GitBuildPackage(JobBase):
                     shell(f"git push origin {build_task.branch} pristine-tar")
                     shell(f"git push --tags origin")
 
-                # Find package name by getting filename of .dsc file
-                dsc_file = glob(join(dir_build, "*.dsc"))
-                if not dsc_file:
-                    raise RuntimeError("Could not verify build output")
+                # Find package name by getting filename of .deb file
+                deb_file = glob(join(dir_build, "*.deb"))
+                if not deb_file:
+                    raise RuntimeError("Could not verify build output - no debian package")
 
                 # Get the generated package name with version number from .dcs file
-                build_files_refix = basename(dsc_file[0]).strip(".dsc")
-                save_package_dir_test = join(api_settings.save_package_dir, build_files_refix)
+                deb_directory = basename(deb_file[0]).strip(".deb")
+                save_package_dir_test = join(api_settings.save_package_dir, deb_directory)
                 save_package_dir = save_package_dir_test
 
                 # Test existence of build dir and set suffix of _build2...n if exists
@@ -126,7 +126,7 @@ class GitBuildPackage(JobBase):
                     save_package_dir = f"{save_package_dir_test}_build{suffix_counter}"
 
                 makedirs(save_package_dir)
-                for file in glob(join(dir_build, f"*{self.version}-*")):
+                for file in glob(join(dir_build, f"*.*")):
                     move(file, save_package_dir)
 
             except RuntimeError:
